@@ -6,6 +6,8 @@ class DatabaseSettings(BaseSettings):
     """
         Настраиваем параметры подключения к PostgreSQL
     """
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    
     PG_USER: str = "postgres"
     PG_PASSWORD: str = "postgres"
     PG_HOST: str = "localhost"
