@@ -94,3 +94,9 @@ button.link {
   color: var(--ok);
   margin: 0;
 }
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
