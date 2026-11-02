@@ -27,7 +27,7 @@ class TokenSettings(BaseSettings):
     """
         Настраиваем параметры нашего токена
     """
-    token_ttl_seconds: int = 120 # время жизни токена в секундах
+    token_ttl_seconds: int = 300 # время жизни токена в секундах (сейчас 5 мин)
 
 
 class CORSSettings(BaseSettings):
