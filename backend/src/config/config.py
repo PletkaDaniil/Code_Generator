@@ -35,6 +35,8 @@ class CORSSettings(BaseSettings):
     """
         Настраиваем CORS (параметры доступа)
     """
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
     allow_origins: list[str] = Field(default=[
         "http://localhost:5173",
         "http://127.0.0.1:5173"
