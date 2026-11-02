@@ -20,6 +20,7 @@ class DatabaseSettings(BaseSettings):
         return (
             f"postgresql+psycopg://{self.PG_USER}:{self.PG_PASSWORD}"
             f"@{self.PG_HOST}:{self.PG_PORT}/{self.PG_DBNAME}"
+            "?sslmode=require"
         )
 
 
