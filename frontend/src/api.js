@@ -13,7 +13,7 @@ function errorMessage(status, data) {
   return 'Что-то пошло не так'
 }
 
-async function request(path, { method = 'GET', body, token } = {}) {
+async function request(path, { method = 'GET', body, token, keepalive = false } = {}) {
   const headers = {}
   if (body) headers['Content-Type'] = 'application/json'
   if (token) headers['Authorization'] = `Bearer ${token}`
@@ -25,6 +25,7 @@ async function request(path, { method = 'GET', body, token } = {}) {
       headers,
       body: body ? JSON.stringify(body) : undefined,
       cache: 'no-store',
+      keepalive,
     })
   } catch {
     throw new ApiError(0, 'Сервер недоступен')
@@ -46,3 +47,6 @@ export const login = (username, password) =>
   request('/login', { method: 'POST', body: { username, password } })
 
 export const getSecureCode = (token) => request('/secure', { token })
+
+export const logout = (token, keepalive = false) =>
+  request('/logout', { method: 'POST', token, keepalive })
