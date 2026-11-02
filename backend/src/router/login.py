@@ -1,10 +1,11 @@
 import logging
 from fastapi import APIRouter
 from src.config.config import settings
-from src.database.crud import create_one_time_token, get_user_by_username
+from src.database.crud import create_access_token, delete_access_token, get_user_by_username
 from src.database.database import DbSession
 from src.utils.schemas.login import LoginRequest
 from src.utils.schemas.token import TokenResponse
+from src.utils.auth import BearerCredentials
 from src.utils.exceptions import AppError
 from src.utils.security import DUMMY_HASH, generate_token, verify_password
 
@@ -34,17 +35,16 @@ async def login(
 
     # генерируем одноразовый токен доступа
     token = generate_token()
-    await create_one_time_token(
-        db, user.id, token, settings.token.token_ttl_seconds
-    )
+    await create_access_token(db, user.id, token, settings.token.token_ttl_seconds)
+    return TokenResponse(token=token, expires_in=settings.token.token_ttl_seconds)
 
-    logger.info(
-        "Вход выполнен; одноразовый токен создан: user_id=%s expires_in=%s",
-        user.id,
-        settings.token.token_ttl_seconds,
-    )
 
-    return TokenResponse(
-        token=token,
-        expires_in=settings.token.token_ttl_seconds
-    )
+@login_router.post("/logout", status_code=204)
+async def logout(
+    db: DbSession, credentials: BearerCredentials
+) -> None:
+    """
+        Отзываем токен
+    """
+    if credentials is not None:
+        await delete_access_token(db, credentials.credentials)
