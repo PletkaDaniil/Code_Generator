@@ -21,11 +21,11 @@ class User(Base):
     )
 
 
-class OneTimeToken(Base):
+class AccessToken(Base):
     """
-        Одноразовый токен доступа к /secure: удаляется при первом использовании
+        Токен доступа: действует до истечения срока или до выхода пользователя
     """
-    __tablename__ = "one_time_tokens"
+    __tablename__ = "access_tokens"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     token: Mapped[str] = mapped_column(String(128), unique=True, index=True, nullable=False)
@@ -37,4 +37,4 @@ class OneTimeToken(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    user: Mapped["User"] = relationship(backref="one_time_tokens")
+    user: Mapped["User"] = relationship(backref="access_tokens")
