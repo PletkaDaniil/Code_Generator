@@ -1,5 +1,6 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import URL
 
 
 class DatabaseSettings(BaseSettings):
@@ -16,11 +17,15 @@ class DatabaseSettings(BaseSettings):
 
     # формируем URL для подключения к БД
     @property
-    def database_url(self) -> str:
-        return (
-            f"postgresql+psycopg://{self.PG_USER}:{self.PG_PASSWORD}"
-            f"@{self.PG_HOST}:{self.PG_PORT}/{self.PG_DBNAME}"
-            "?sslmode=require"
+    def database_url(self) -> URL:
+        return URL.create(
+            drivername="postgresql+psycopg",
+            username=self.PG_USER,
+            password=self.PG_PASSWORD,
+            host=self.PG_HOST,
+            port=self.PG_PORT,
+            database=self.PG_DBNAME,
+            query={"sslmode": "require"}
         )
 
 
