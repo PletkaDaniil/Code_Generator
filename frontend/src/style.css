@@ -100,3 +100,16 @@ button.link {
   flex-direction: column;
   gap: 0.5rem;
 }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.check input {
+  padding: 0;
+}
