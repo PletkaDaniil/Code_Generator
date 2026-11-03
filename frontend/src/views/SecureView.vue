@@ -14,6 +14,40 @@ const info = ref('')
 const loading = ref(false)
 const secondsLeft = ref(0)
 
+const registerProblem = computed(() => {
+  if (mode.value !== 'register') return ''
+
+  if (username.value.trim().length < 3) {
+    return 'Имя пользователя должно содержать не менее 3 символов.'
+  }
+
+  if (username.value.trim().length > 64) {
+    return 'Имя пользователя не должно превышать 64 символа.'
+  }
+
+  if (password.value.length < 6) {
+    return 'Пароль должен содержать не менее 6 символов.'
+  }
+
+  if (password.value.length > 128) {
+    return 'Пароль не должен превышать 128 символов.'
+  }
+
+  if (password.value !== passwordConfirm.value) {
+    return 'Пароли не совпадают.'
+  }
+
+  return ''
+})
+
+const passwordsMatch = computed(() => {
+  return password.value === passwordConfirm.value
+})
+
+const showMatchHint = computed(() => {
+  return mode.value === 'register' && passwordConfirm.value.length > 0
+})
+
 // токен хранится только в памяти страницы
 let token = null
 // оставшееся время действия сессии
@@ -178,7 +212,7 @@ onUnmounted(() => {
     <p v-if="info" class="info">{{ info }}</p>
     <p v-if="error" class="error">{{ error }}</p>
 
-    <button type="submit" :disabled="loading || !!registerProblem">
+    <button type="submit" :disabled="loading">
       {{ mode === 'login' ? 'Войти' : 'Зарегистрироваться' }}
     </button>
 
