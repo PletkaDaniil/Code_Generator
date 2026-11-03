@@ -3,8 +3,6 @@
 venv/
 __pycache__/
 .env
-#временно
-README.md
 
 # Frontend build output
 logs
