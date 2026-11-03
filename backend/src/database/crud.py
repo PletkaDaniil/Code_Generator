@@ -1,7 +1,17 @@
+import hashlib
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.models.models import AccessToken, User
+
+
+def hash_token(
+    token: str
+) -> str:
+    """
+        Хешируем токен доступа
+    """
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 async def get_user_by_username(
@@ -39,7 +49,7 @@ async def create_access_token(
     await db.execute(delete(AccessToken).where(AccessToken.expires_at <= now))
 
     access_token = AccessToken(
-        token=token,
+        token=hash_token(token),
         user_id=user_id,
         expires_at=now + timedelta(seconds=ttl_seconds),
     )
@@ -57,17 +67,20 @@ async def get_user_id_by_token(
     """
     result = await db.execute(
         select(AccessToken.user_id).where(
-            AccessToken.token == token,
+            AccessToken.token == hash_token(token),
             AccessToken.expires_at > datetime.now(timezone.utc),
         )
     )
     return result.scalar_one_or_none()
 
+
 async def delete_access_token(
     db: AsyncSession, token: str
-)-> None:
+) -> None:
     """
         Удаляем токен доступа из бд
     """
-    await db.execute(delete(AccessToken).where(AccessToken.token == token))
+    await db.execute(
+        delete(AccessToken).where(AccessToken.token == hash_token(token))
+    )
     await db.commit()
