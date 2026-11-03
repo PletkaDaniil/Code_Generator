@@ -40,18 +40,12 @@ const registerProblem = computed(() => {
   return ''
 })
 
-const passwordsMatch = computed(() => {
-  return password.value === passwordConfirm.value
-})
-
-const showMatchHint = computed(() => {
-  return mode.value === 'register' && passwordConfirm.value.length > 0
-})
-
 // токен хранится только в памяти страницы
 let token = null
 // оставшееся время действия сессии
 let timerId = null
+// таймаут для скрытия ошибки через 5 секунд
+let errorTimeout = null
 
 const timeLeft = computed(() => {
   const minutes = Math.floor(secondsLeft.value / 60)
@@ -59,13 +53,34 @@ const timeLeft = computed(() => {
   return `${minutes}:${seconds}`
 })
 
+// показываем ошибку на 5 секунд
+function showError(message) {
+  clearTimeout(errorTimeout)
+  error.value = message
+
+  errorTimeout = setTimeout(() => {
+    error.value = ''
+    errorTimeout = null
+  }, 5000)
+}
+
+// очищаем ошибку и таймер
+function clearError() {
+  clearTimeout(errorTimeout)
+  errorTimeout = null
+  error.value = ''
+}
+
 // запускаем таймер сессии
 function startTimer(seconds) {
   const expiresAt = Date.now() + seconds * 1000
   secondsLeft.value = seconds
   timerId = setInterval(() => {
     secondsLeft.value = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
-    if (secondsLeft.value === 0) endSession('Сессия истекла. Войдите снова.')
+
+    if (secondsLeft.value === 0) {
+      endSession('Сессия истекла. Войдите снова.')
+    }
   }, 1000)
 }
 
@@ -85,39 +100,44 @@ function endSession(message = '') {
   stopTimer()
   revokeToken()
   code.value = ''
-  error.value = ''
+  clearError()
   info.value = message
   mode.value = 'login'
 }
 
 function switchMode(next) {
   mode.value = next
-  error.value = ''
+  clearError()
   info.value = ''
   password.value = ''
   passwordConfirm.value = ''
   showPassword.value = false
 }
 
+// генерируем код
 async function generate() {
-  error.value = ''
+  clearError()
   loading.value = true
   try {
     code.value = (await getSecureCode(token)).code
   } catch (e) {
-    if (e.status === 401) endSession('Сессия истекла. Войдите снова.')
-    else error.value = e.message
+    if (e.status === 401) {
+      endSession('Сессия истекла. Войдите снова.')
+    } else {
+      showError(e.message)
+    }
   } finally {
     loading.value = false
   }
 }
 
+// обрабатываем вход и регистрацию
 async function submit() {
-  error.value = ''
+  clearError()
   info.value = ''
 
   if (registerProblem.value) {
-    error.value = registerProblem.value
+    showError(registerProblem.value)
     return
   }
 
@@ -139,7 +159,7 @@ async function submit() {
     code.value = ''
     mode.value = 'session'
   } catch (e) {
-    error.value = e.message
+    showError(e.message)
   } finally {
     loading.value = false
   }
@@ -148,11 +168,14 @@ async function submit() {
 // отзываем токен при закрытии или обновлении страницы
 const onPageHide = () => revokeToken(true)
 
-onMounted(() => window.addEventListener('pagehide', onPageHide))
+onMounted(() => {
+  window.addEventListener('pagehide', onPageHide)
+})
 
 onUnmounted(() => {
   window.removeEventListener('pagehide', onPageHide)
   stopTimer()
+  clearTimeout(errorTimeout)
   revokeToken()
 })
 </script>
@@ -174,7 +197,7 @@ onUnmounted(() => {
     </div>
   </template>
 
-  <form v-else class="form" @submit.prevent="submit">
+  <form v-else class="form" novalidate @submit.prevent="submit">
     <h2>{{ mode === 'login' ? 'Вход' : 'Регистрация' }}</h2>
 
     <input
@@ -205,10 +228,6 @@ onUnmounted(() => {
       Показать пароль
     </label>
 
-    <p v-if="showMatchHint" :class="passwordsMatch ? 'info' : 'error'">
-      {{ passwordsMatch ? 'Пароли совпадают' : 'Пароли не совпадают' }}
-    </p>
-
     <p v-if="info" class="info">{{ info }}</p>
     <p v-if="error" class="error">{{ error }}</p>
 
@@ -224,7 +243,12 @@ onUnmounted(() => {
     >
       Нет аккаунта? Зарегистрироваться
     </button>
-    <button v-else type="button" class="link" @click="switchMode('login')">
+    <button
+      v-else
+      type="button"
+      class="link"
+      @click="switchMode('login')"
+    >
       Уже есть аккаунт? Войти
     </button>
   </form>
