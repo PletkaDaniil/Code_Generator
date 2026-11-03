@@ -6,6 +6,8 @@ import CodeDisplay from '../components/CodeDisplay.vue'
 const mode = ref('login')
 const username = ref('')
 const password = ref('')
+const passwordConfirm = ref('')
+const showPassword = ref(false)
 const code = ref('')
 const error = ref('')
 const info = ref('')
@@ -58,6 +60,9 @@ function switchMode(next) {
   mode.value = next
   error.value = ''
   info.value = ''
+  password.value = ''
+  passwordConfirm.value = ''
+  showPassword.value = false
 }
 
 async function generate() {
@@ -76,12 +81,17 @@ async function generate() {
 async function submit() {
   error.value = ''
   info.value = ''
+
+  if (registerProblem.value) {
+    error.value = registerProblem.value
+    return
+  }
+
   loading.value = true
   try {
     if (mode.value === 'register') {
       await register(username.value, password.value)
-      password.value = ''
-      mode.value = 'login'
+      switchMode('login')
       info.value = 'Регистрация прошла успешно. Теперь войдите.'
       return
     }
@@ -91,6 +101,7 @@ async function submit() {
     startTimer(data.expires_in)
     username.value = ''
     password.value = ''
+    showPassword.value = false
     code.value = ''
     mode.value = 'session'
   } catch (e) {
@@ -141,16 +152,33 @@ onUnmounted(() => {
     />
     <input
       v-model="password"
-      type="password"
+      :type="showPassword ? 'text' : 'password'"
       placeholder="Пароль"
       :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
       required
     />
+    <input
+      v-if="mode === 'register'"
+      v-model="passwordConfirm"
+      :type="showPassword ? 'text' : 'password'"
+      placeholder="Повторите пароль"
+      autocomplete="new-password"
+      required
+    />
+
+    <label class="check">
+      <input v-model="showPassword" type="checkbox" />
+      Показать пароль
+    </label>
+
+    <p v-if="showMatchHint" :class="passwordsMatch ? 'info' : 'error'">
+      {{ passwordsMatch ? 'Пароли совпадают' : 'Пароли не совпадают' }}
+    </p>
 
     <p v-if="info" class="info">{{ info }}</p>
     <p v-if="error" class="error">{{ error }}</p>
 
-    <button type="submit" :disabled="loading">
+    <button type="submit" :disabled="loading || !!registerProblem">
       {{ mode === 'login' ? 'Войти' : 'Зарегистрироваться' }}
     </button>
 
