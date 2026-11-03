@@ -8,8 +8,8 @@ export class ApiError extends Error {
 }
 
 function errorMessage(status, data) {
-  if (status === 422) return 'Проверьте данные: логин от 3 символов, пароль от 6'
   if (typeof data?.detail === 'string') return data.detail
+  if (status === 422) return 'Проверьте правильность введённых данных'
   return 'Что-то пошло не так'
 }
 
